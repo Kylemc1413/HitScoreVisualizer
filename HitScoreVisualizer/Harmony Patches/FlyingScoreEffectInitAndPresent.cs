@@ -16,6 +16,7 @@ namespace HitScoreVisualizer.Harmony_Patches
             typeof(int),
             typeof(float),
             typeof(Vector3),
+            typeof(Quaternion),
             typeof(Color)})]
     class FlyingScoreEffectInitAndPresent
     {
@@ -50,6 +51,17 @@ namespace HitScoreVisualizer.Harmony_Patches
 
         static void Postfix(FlyingScoreEffect __instance, ref Color ____color, NoteCutInfo noteCutInfo)
         {
+            void earlyJudge(SaberSwingRatingCounter counter)
+            {
+
+                ScoreController.RawScoreWithoutMultiplier(noteCutInfo, out int before, out int after, out int accuracy);
+                int total = before + 30 + accuracy;
+                Config.judge(__instance, noteCutInfo, counter, total, before, 30, accuracy);
+
+                // If the counter is finished, remove our event from it
+                counter.didFinishEvent -= judge;
+            }
+
             void judge(SaberSwingRatingCounter counter)
             {
                 
@@ -62,7 +74,7 @@ namespace HitScoreVisualizer.Harmony_Patches
             }
 
             // Apply judgments a total of twice - once when the effect is created, once when it finishes.
-            judge(noteCutInfo.swingRatingCounter);
+            earlyJudge(noteCutInfo.swingRatingCounter);
             noteCutInfo.swingRatingCounter.didFinishEvent += judge;
         }
     }
